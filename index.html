@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KyyNoroshi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: transparent;
+      color: #00ff00;
+      text-align: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+    }
+    body > *:not(canvas) {
+      position: relative;
+      z-index: 1;
+    }
+
+    .pp-img {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      margin: 100px auto 10px;
+      object-fit: cover;
+      border: 4px solid #00ff00;
+      display: block;
+    }
+
+    .username {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .buttons {
+      margin: 20px 0;
+    }
+
+    .buttons button {
+      padding: 20px 40px;
+      margin: 12px;
+      border: none;
+      background: #003300;
+      color: #00ff00;
+      font-size: 24px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .menu, .vip-menu {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 36px;
+      cursor: pointer;
+      color: #00ff00;
+      display: none;
+    }
+
+    .menu.show, .vip-menu.show {
+      display: block;
+    }
+
+    .media-container {
+      margin-top: 20px;
+      padding-bottom: 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    video, audio {
+      width: 90%;
+      max-width: 600px;
+      margin: 20px auto 10px;
+      display: block;
+      background: #111;
+    }
+
+    .media-wrapper {
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .delete-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 8px;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+
+    .vip-login {
+      margin: 30px auto;
+    }
+
+    .vip-login input {
+      padding: 14px;
+      margin: 10px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      background: #222;
+      color: #00ff00;
+    }
+
+    .vip-login button {
+      padding: 16px 32px;
+      font-size: 20px;
+      margin-top: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background: #003300;
+      color: #00ff00;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="matrixCanvas"></canvas>
+
+<div class="menu show" onclick="showAddOptions()">⋮</div>
+<div class="vip-menu" id="vipMenu" onclick="addVipVideo()">⋮</div>
+
+<img src="https://img1.pixhost.to/images/7731/629140803_imgtmp.jpg" class="pp-img" alt="PP">
+<div class="username">KyyNoroshi</div>
+
+<div class="buttons">
+  <button onclick="showType('audio')">Audio</button>
+  <button onclick="showType('video')">Video</button>
+  <button onclick="showVipLogin()">VIP Eksklusif</button>
+</div>
+
+<div class="vip-login" id="vipLoginForm" style="display:none;">
+  <input type="text" id="vipUser" placeholder="Username"><br>
+  <input type="password" id="vipPass" placeholder="Password"><br>
+  <button onclick="loginVip()">Masuk VIP</button>
+</div>
+
+<div class="media-container" id="mediaContainer"></div>
+
+<script>
+  // MATRIX EFFECT
+  const canvas = document.getElementById('matrixCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+  canvas.width = width;
+  canvas.height = height;
+
+  const letters = "アァイィウヴエオカキクケコサシスセソABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const fontSize = 14;
+  const columns = Math.floor(width / fontSize);
+  const drops = Array(columns).fill(1);
+
+  function drawMatrix() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "#0F0";
+    ctx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = letters.charAt(Math.floor(Math.random() * letters.length));
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+      if (drops[i] * fontSize > height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  setInterval(drawMatrix, 33);
+
+  window.addEventListener('resize', () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+  });
+
+  // MEDIA + VIP HANDLING
+  const container = document.getElementById('mediaContainer');
+  const vipLoginForm = document.getElementById('vipLoginForm');
+  const vipMenu = document.getElementById('vipMenu');
+
+  function clearMedia() {
+    container.innerHTML = '';
+  }
+
+  function renderMedia(type, list) {
+    clearMedia();
+    list.forEach((url, index) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'media-wrapper';
+
+      const media = document.createElement(type);
+      media.src = url;
+      media.controls = true;
+      media.setAttribute("crossorigin", "anonymous");
+      wrapper.appendChild(media);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = 'Hapus';
+      delBtn.onclick = () => {
+        const key = type + 's';
+        const items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.splice(index, 1);
+        localStorage.setItem(key, JSON.stringify(items));
+        showType(type);
+      };
+      wrapper.appendChild(delBtn);
+
+      container.appendChild(wrapper);
+    });
+  }
+
+  function showType(type) {
+    vipLoginForm.style.display = 'none';
+    const list = JSON.parse(localStorage.getItem(type + 's') || '[]');
+    renderMedia(type, list);
+  }
+
+  function showAddOptions() {
+    const choice = prompt('Tambah apa? (Ketik "audio" atau "video")');
+    if (!['audio', 'video'].includes(choice)) return alert('Tipe tidak dikenali.');
+
+    const url = prompt(`Masukkan URL untuk ${choice}:`);
+    if (!url) return;
+
+    const key = choice + 's';
+    const items = JSON.parse(localStorage.getItem(key) || '[]');
+    items.push(url);
+    localStorage.setItem(key, JSON.stringify(items));
+
+    showType(choice);
+  }
+
+  function showVipLogin() {
+    clearMedia();
+    vipLoginForm.style.display = 'block';
+  }
+
+  function loginVip() {
+    const user = document.getElementById('vipUser').value.trim();
+    const pass = document.getElementById('vipPass').value.trim();
+
+    if (user === 'Kyy' && pass === '200812') {
+      alert('Login Berhasil! Menampilkan video eksklusif.');
+      vipLoginForm.style.display = 'none';
+      vipMenu.classList.add('show');
+
+      const vipVideos = JSON.parse(localStorage.getItem('vipVideos') || '[]');
+      renderMedia('video', vipVideos);
+    } else {
+      alert('Username atau Password salah!');
+    }
+  }
+
+  function addVipVideo() {
+    const url = prompt('Masukkan URL untuk Video Eksklusif:');
+    if (!url) return;
+
+    const vipVideos = JSON.parse(localStorage.getItem('vipVideos') || '[]');
+    vipVideos.push(url);
+    localStorage.setItem('vipVideos', JSON.stringify(vipVideos));
+    loginVip();
+  }
+</script>
+</body>
+</html>
